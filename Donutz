@@ -61,7 +61,7 @@ namespace donuts
       string to = nextMember.Email + ",brunnert@hurco.com";
 #endif
       string subject = "Donut Club Reminder";
-      string body = $"{nextMember.Name}, It is your turn, {friday}. Please see https://aws199012.github.io/Donut Club/ for more info.";
+      string body = $"{nextMember.Name}, It is your turn, {friday}. Please see https://aws199012.github.io/Donut-Club/ for more info.";
       string from = "Donut Bot <builde@hurco.com>";
       string pass = "Hurco2022";
       string args = $"-f \"{from}\" -p {pass} -t {to} -s \"{subject}\" -b \"{body}\"";
