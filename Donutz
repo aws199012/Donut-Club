@@ -1,0 +1,134 @@
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Globalization;
+using System.IO;
+
+namespace donuts
+{
+  class Member
+  {
+    public string Name { get; set; }
+    public string Email { get; set; }
+
+    public Member(string email, string name)
+    {
+      Name = name;
+      Email = email;
+    }
+  }
+  class Program
+  {
+    static void Main(string[] args)
+    {
+      List<Member> members = new List<Member>();
+
+      members.Add(new Member("larsend@hurco.com", "Dan Larsen"));
+      members.Add(new Member("salleyc@hurco.com", "Cameron Salley"));
+      members.Add(new Member("brunnert@hurco.com", "Tim Brunner"));
+      members.Add(new Member("truebloodc@hurco.com", "Chris Trueblood"));
+      members.Add(new Member("layr@hurco.com", "Ryan Lay"));
+      members.Add(new Member("winingsc@hurco.com", "Caleb Winings"));
+      members.Add(new Member("voilsn@hurco.com", "Nicholas Voils"));
+
+      StreamWriter s = new StreamWriter("index.html", false);
+
+      DayOfWeek today = DateTime.Now.DayOfWeek;
+      int week = CultureInfo.InvariantCulture.Calendar.GetWeekOfYear(DateTime.Now, CalendarWeekRule.FirstDay, DayOfWeek.Sunday);
+      Member nextMember = members[week % members.Count];
+      DateTime nextFriday = GetNextFriday();
+
+      Console.WriteLine(SiteHeader());
+      s.WriteLine(SiteHeader());
+      Console.WriteLine(SiteFooter(members, nextMember.Name, nextFriday.ToString("MM/dd")));
+      s.WriteLine(SiteFooter(members, nextMember.Name, nextFriday.ToString("MM/dd")));
+      s.Close();
+
+      SendEmailReminder(nextMember, nextFriday.ToString("MM/dd"));
+    }
+
+    static DateTime GetNextFriday()
+    {
+      int daysToAdd = ((int)DayOfWeek.Friday - (int)DateTime.Today.DayOfWeek + 7) % 7;
+      return DateTime.Today.AddDays(daysToAdd);
+    }
+
+    static void SendEmailReminder(Member nextMember, string friday)
+    {
+#if DEBUG
+      string to = "brunnert@hurco.com";
+#else
+      string to = nextMember.Email + ",brunnert@hurco.com";
+#endif
+      string subject = "Donut Club Reminder";
+      string body = $"{nextMember.Name}, It is your turn, {friday}. Please see https://aws199012.github.io/Donut Club/ for more info.";
+      string from = "Donut Bot <builde@hurco.com>";
+      string pass = "Hurco2022";
+      string args = $"-f \"{from}\" -p {pass} -t {to} -s \"{subject}\" -b \"{body}\"";
+
+      Process proc;
+      ProcessStartInfo info = new ProcessStartInfo("Mailer.exe", args);
+      proc = Process.Start(info);
+      proc.WaitForExit();
+    }
+
+    static string SiteHeader()
+    {
+      return @"
+<html>
+  <head>
+    <title>Who's bringing donuts?</title>
+    <style>
+      body
+      {
+        color: white;
+        background: black;
+        text-align: center;
+      }
+      h2
+      {
+        font-size: 5em;
+      }
+      h3
+      {
+        color: red;
+        font-size: 3em;
+      }
+      table
+      {
+        margin: auto;
+      }
+    </style>
+  </head>
+  <body>
+    <h2>Who's bringing donuts this week?</h2>";
+    }
+
+    static string SiteFooter(List<Member> members, string current, string day)
+    {
+      string result = $"    <h3>{current}</h3>\n";
+      result += $"    <h1>{day}</h1>";
+      result += @"
+    <hr>
+    <h1>Bonafide Donuts List</h1>
+    <table>";
+
+      result += "\n";
+
+      foreach (Member member in members)
+      {
+        if (member.Name == current)
+          result += $"      <tr><td><li></td><td><font color='red'>{member.Name}</font></td></tr>\n";
+        else
+          result += $"      <tr><td><li></td><td>{member.Name}</td></tr>\n";
+      }
+
+      result += @"
+    </table>
+  </body>
+</html>";
+
+      return result;
+    }
+  }
+}
