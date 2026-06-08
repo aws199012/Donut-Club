@@ -3,6 +3,10 @@
     "robinhood-trading": {
       "type": "http",
       "url": "https://agent.robinhood.com/mcp/trading"
+    },
+    "claude-code-docs": {
+      "type": "http",
+      "url": "https://code.claude.com/docs/mcp"
     }
   }
 }
