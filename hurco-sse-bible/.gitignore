@@ -1,0 +1,9 @@
+node_modules/
+backend/data/*.db
+backend/data/*.db-journal
+backend/data/*.db-wal
+backend/data/*.db-shm
+backend/uploads/*
+!backend/uploads/.gitkeep
+.env
+dist/
