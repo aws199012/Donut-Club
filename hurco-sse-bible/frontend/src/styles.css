@@ -18,16 +18,28 @@
   --tag-text: #ff9d9d;
   --mark-bg: #f2b705;
   --mark-text: #221a00;
+
+  /* Vintage diner/menu-board typography for general app text. Category pixel
+     buttons deliberately do NOT use these — they keep 'Press Start 2P' as set
+     directly on .category-pixel-button. */
+  --font-display: 'Bungee', system-ui, sans-serif;
+  --font-body: 'Nunito', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
 }
 
 * { box-sizing: border-box; }
 
 body {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  font-family: var(--font-body);
   color: var(--text);
   background: var(--bg-glow), var(--bg);
   background-attachment: fixed;
+}
+
+h1, h2, h3, h4, h5, h6, .sidebar-header {
+  font-family: var(--font-display);
+  letter-spacing: 0.02em;
+  font-weight: normal; /* Bungee only ships one weight; avoid faux-bolding */
 }
 
 .app-shell {
@@ -302,7 +314,9 @@ body {
   padding: 0.45rem 0.9rem;
   border-radius: 6px;
   cursor: pointer;
-  font-size: 0.88rem;
+  font-size: 0.78rem;
+  font-family: var(--font-display);
+  letter-spacing: 0.02em;
   color: var(--text);
 }
 .btn:hover { border-color: var(--accent); }

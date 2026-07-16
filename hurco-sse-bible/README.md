@@ -84,10 +84,16 @@ replacing a placeholder doesn't create a duplicate or break existing cross-refer
 
 Dark, Hurco-brand colorway (near-black background with a subtle red glow, cyan reserved for
 the "From the web" label). The sidebar's category buttons use a shared `.category-pixel-button`
-CSS class — a retro/arcade look (notched corners, red/black/maroon bevel, offset drop shadow,
-"Press Start 2P" pixel font, subtle idle glow, a pressed-down look when selected). Every
-category — seeded, nested, or created via the sidebar's "+ new" link — renders through the same
-component, so new categories automatically pick up the styling with no extra work.
+CSS class — a retro/arcade look (notched corners, red/blue/green bevel matched per button color,
+offset drop shadow, "Press Start 2P" pixel font, a breathing text pulse, a pressed-down look
+when selected). Every category — seeded, nested, or created via the sidebar's "+ new" link —
+renders through the same component, so new categories automatically pick up the styling with no
+extra work.
+
+General app text (headers, titles, buttons other than category buttons) uses "Bungee", a bold
+vintage/diner-poster display font; body copy (metadata, tags, extracted text, form fields) uses
+"Nunito", a warmer but still highly readable complementary font. The category pixel buttons are
+untouched by this — they keep their own "Press Start 2P" font regardless.
 
 ## Web search
 
