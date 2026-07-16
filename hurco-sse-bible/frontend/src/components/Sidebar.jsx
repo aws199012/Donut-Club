@@ -1,4 +1,4 @@
-export default function Sidebar({ categories, selectedCategoryId, onSelectCategory, onAddDocument, onAddTicket }) {
+export default function Sidebar({ categories, selectedCategoryId, onSelectCategory, onAddDocument, onAddTicket, onAddCategory }) {
   const topLevel = categories.filter((c) => !c.parent_id);
   const childrenOf = (id) => categories.filter((c) => c.parent_id === id);
 
@@ -28,7 +28,10 @@ export default function Sidebar({ categories, selectedCategoryId, onSelectCatego
         <button className="btn" onClick={onAddTicket}>+ New Ticket</button>
       </div>
       <nav>
-        <div className="sidebar-section-label">Categories</div>
+        <div className="sidebar-section-label">
+          Categories
+          <button className="link-btn sidebar-add-category" onClick={onAddCategory}>+ new</button>
+        </div>
         <ul className="sidebar-tree">{topLevel.map(renderNode)}</ul>
       </nav>
     </aside>

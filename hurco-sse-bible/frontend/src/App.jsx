@@ -8,12 +8,14 @@ import TicketDetail from './components/TicketDetail.jsx';
 import TicketForm from './components/TicketForm.jsx';
 import CategoryBrowse from './components/CategoryBrowse.jsx';
 import AddDocumentModal from './components/AddDocumentModal.jsx';
+import AddCategoryModal from './components/AddCategoryModal.jsx';
 
 export default function App() {
   const [categories, setCategories] = useState([]);
   const [documents, setDocuments] = useState([]);
   const [view, setView] = useState({ type: 'welcome' });
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showAddCategoryModal, setShowAddCategoryModal] = useState(false);
   const [localResults, setLocalResults] = useState(null);
 
   const refreshCategories = () => api.getCategories().then(setCategories);
@@ -48,6 +50,12 @@ export default function App() {
     openTicket(id);
   };
 
+  const onCategoryCreated = (category) => {
+    setShowAddCategoryModal(false);
+    refreshCategories();
+    openCategory(category.id);
+  };
+
   return (
     <div className="app-shell">
       <Sidebar
@@ -56,6 +64,7 @@ export default function App() {
         onSelectCategory={openCategory}
         onAddDocument={() => setShowAddModal(true)}
         onAddTicket={openNewTicket}
+        onAddCategory={() => setShowAddCategoryModal(true)}
       />
 
       <div className="main-column">
@@ -125,6 +134,14 @@ export default function App() {
           documents={documents}
           onClose={() => setShowAddModal(false)}
           onUploaded={onDocumentUploaded}
+        />
+      )}
+
+      {showAddCategoryModal && (
+        <AddCategoryModal
+          categories={categories}
+          onClose={() => setShowAddCategoryModal(false)}
+          onCreated={onCategoryCreated}
         />
       )}
     </div>

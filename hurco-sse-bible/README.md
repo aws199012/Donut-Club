@@ -72,7 +72,8 @@ replacing a placeholder doesn't create a duplicate or break existing cross-refer
    problem/resolution/machine fields. Always shown first, labeled "From your library".
 5. **Web search fallback** — a separate, explicitly-labeled "From the web" section. You choose
    when to run it (a prompt appears automatically if local results are thin).
-6. **Category browsing** — a collapsible sidebar tree, like a wiki table of contents.
+6. **Category browsing** — a sidebar tree, like a wiki table of contents. Create new top-level
+   or nested categories from the sidebar's "+ new" link.
 7. **Tickets** — their own entry type: problem, resolution, machine/model, date, tags, and
    links to related documents (and vice versa from the document view).
 
@@ -101,7 +102,7 @@ frontend/
   src/
     App.jsx         Top-level layout/view state
     components/      Sidebar, SearchBar, SearchResults, DocumentDetail, TicketDetail,
-                      TicketForm, AddDocumentModal, CategoryBrowse, Highlighted
+                      TicketForm, AddDocumentModal, AddCategoryModal, CategoryBrowse, Highlighted
 ```
 
 ## Known limitations / next steps
@@ -115,5 +116,5 @@ frontend/
 - No authentication — this is meant to run locally for a single user.
 - The DuckDuckGo web search fallback can be blocked/rate-limited on some networks; a Bing key
   is the more reliable option if you rely on the web fallback often.
-- No nested-category UI yet (the data model supports `parent_category`, but the sidebar/API
-  only exercise flat top-level categories in this MVP).
+- Nested categories go one level deep (a category's parent must itself be top-level) — matches
+  what the sidebar renders; deeper trees would need sidebar changes too.

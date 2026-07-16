@@ -50,12 +50,23 @@ body {
 }
 
 .sidebar-section-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--sidebar-muted);
   margin-bottom: 0.5rem;
 }
+
+.sidebar-add-category {
+  color: var(--sidebar-muted);
+  text-transform: none;
+  letter-spacing: normal;
+  font-size: 0.75rem;
+}
+.sidebar-add-category:hover { color: var(--sidebar-text); }
 
 .sidebar-tree, .sidebar-children {
   list-style: none;
