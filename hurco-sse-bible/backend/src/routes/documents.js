@@ -127,7 +127,10 @@ documentsRouter.post('/', upload.single('file'), async (req, res) => {
       .run(
         docTitle,
         file.originalname,
-        path.relative(path.join(__dirname, '..', '..'), file.path),
+        // Stored as a forward-slash URL path ("uploads/<name>") regardless of OS:
+        // the frontend links to it directly, and reads/deletes resolve it against
+        // UPLOAD_DIR — never against the install/backend directory.
+        `uploads/${path.basename(file.path)}`,
         file.mimetype,
         categoryId,
         categorySuggested,
@@ -226,7 +229,7 @@ documentsRouter.delete('/:id', (req, res) => {
   const doc = db.prepare('SELECT * FROM documents WHERE id = ?').get(req.params.id);
   if (!doc) return res.status(404).json({ error: 'not found' });
 
-  const filePath = path.join(__dirname, '..', '..', doc.filepath);
+  const filePath = path.join(UPLOAD_DIR, path.basename(doc.filepath));
   db.prepare('DELETE FROM documents WHERE id = ?').run(doc.id);
   removeFromFts('document', doc.id);
   fs.rm(filePath, { force: true }, () => {});

@@ -1,0 +1,9 @@
+{
+  "name": "hurco-sse-bible",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Hurco SSE Bible — build orchestration only; see backend/, frontend/, desktop/",
+  "scripts": {
+    "build:desktop": "cd frontend && npm run build && cd ../desktop && npm run dist"
+  }
+}

@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Hurco SSE Bible</title>
+    <style>
+      /* Matches the app's dark Hurco colorway. System fonts only — this page must
+         render instantly and offline, before any server exists. */
+      html, body {
+        margin: 0;
+        height: 100%;
+        background: #0b0a0a;
+        color: #f1efec;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      }
+      .wrap {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 1.2rem;
+        background: radial-gradient(ellipse 70% 55% at 50% 40%, rgba(150, 18, 18, 0.35), rgba(11, 10, 10, 0) 70%);
+      }
+      h1 { font-size: 1.3rem; letter-spacing: 0.04em; margin: 0; }
+      p { color: #a89f99; font-size: 0.9rem; margin: 0; }
+      .dots::after {
+        content: '';
+        animation: dots 1.5s steps(4, end) infinite;
+      }
+      @keyframes dots {
+        0% { content: ''; }
+        25% { content: '.'; }
+        50% { content: '..'; }
+        75% { content: '...'; }
+      }
+      .bar {
+        width: 220px;
+        height: 4px;
+        border-radius: 2px;
+        background: rgba(255, 255, 255, 0.08);
+        overflow: hidden;
+      }
+      .bar::after {
+        content: '';
+        display: block;
+        width: 40%;
+        height: 100%;
+        border-radius: 2px;
+        background: #cf2323;
+        animation: slide 1.2s ease-in-out infinite alternate;
+      }
+      @keyframes slide {
+        from { transform: translateX(-30%); }
+        to { transform: translateX(220%); }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <h1>HURCO SSE BIBLE</h1>
+      <div class="bar"></div>
+      <p class="dots">Starting the library</p>
+    </div>
+  </body>
+</html>

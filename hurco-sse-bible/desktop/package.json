@@ -1,0 +1,50 @@
+{
+  "name": "hurco-sse-bible-desktop",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Hurco SSE Bible — personal knowledge base (desktop app)",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "prep": "node prep.js",
+    "dist": "npm run prep && electron-builder"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.3.0",
+    "cheerio": "^1.0.0",
+    "compromise": "^14.16.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.0",
+    "mammoth": "^1.8.0",
+    "multer": "^2.0.0",
+    "pdf-parse": "^1.1.1",
+    "uuid": "^11.0.0"
+  },
+  "devDependencies": {
+    "electron": "^31.0.0",
+    "electron-builder": "^25.0.0"
+  },
+  "build": {
+    "appId": "com.hurco.ssebible",
+    "productName": "Hurco SSE Bible",
+    "asar": false,
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "main.js",
+      "loading.html",
+      "bundled-backend/**",
+      "frontend-dist/**"
+    ],
+    "win": {
+      "target": "nsis"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    }
+  }
+}

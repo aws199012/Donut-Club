@@ -58,7 +58,7 @@ function seedDocument({ title, categoryName, tags, body, placeholderNote }) {
           extracted_text, version_number, original_document_id, is_current)
          VALUES (?, ?, ?, 'text/markdown', ?, 0, ?, ?, 1, NULL, 1)`
       )
-      .run(title, filename, path.join('uploads', storedName), categoryId, placeholderNote, body);
+      .run(title, filename, `uploads/${storedName}`, categoryId, placeholderNote, body);
 
     const documentId = info.lastInsertRowid;
     const tagIds = upsertTags(tags);

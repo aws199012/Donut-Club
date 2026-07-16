@@ -164,6 +164,51 @@ keeps it at roughly 10% visibility, fixed in place as you scroll). The logo imag
 committed to this public repo — see `frontend/public/README-assets.md` for where to put your
 own copy locally. Without it, the page just shows the plain dark background as before.
 
+## Desktop app (Windows installer)
+
+The app can be packaged as a self-contained Electron desktop application — one installed
+program that starts its own backend internally and opens straight into the UI. No terminals,
+no browser, no ports to remember.
+
+**One-time setup** (on the machine doing the build):
+
+```bash
+cd desktop && npm install
+```
+
+Electron's install step downloads its runtime binary via a postinstall script, so if your npm
+blocks install scripts you'll need to approve them (same `npm approve-scripts` +
+`npm rebuild electron` dance as `better-sqlite3` needed in `backend/`).
+
+**Optional — app icon**: drop a square (256×256 or larger) PNG of the Hurco logo at
+`desktop/build/icon.png` before building. Like the watermark image, the icon is intentionally
+gitignored (real brand asset, public repo); without it the build just uses Electron's default
+icon.
+
+**Build the installer:**
+
+```bash
+cd hurco-sse-bible
+npm run build:desktop
+```
+
+This builds the frontend, stages it plus the backend source into `desktop/`, and produces a
+Windows NSIS installer at `desktop/release/Hurco SSE Bible Setup <version>.exe`. Run that file
+to install; it creates Start Menu/desktop shortcuts like any normal program. (Mac/Linux targets
+are a config line away in `desktop/package.json` — currently Windows-only.)
+
+**Where the desktop app keeps data**: `%APPDATA%\Hurco SSE Bible\` (`data\bible.db` +
+`uploads\`), NOT the install directory — documents and tickets survive app updates and
+reinstalls. On first run with an empty library it auto-loads the built-in Hurco seed content.
+To carry over a library you built running in web/dev mode, quit the app and copy
+`backend\data\bible.db` into `%APPDATA%\Hurco SSE Bible\data\` and the contents of
+`backend\uploads\` into `%APPDATA%\Hurco SSE Bible\uploads\`.
+
+**Dev workflow is unchanged**: `npm run dev` in `backend/` + `frontend/` still runs the app in
+the browser exactly as before — the desktop packaging is purely additive. (For a quick
+desktop-shell test without building an installer: build the frontend, then `cd desktop &&
+npm start`.)
+
 ## Web search
 
 By default, "From the web" uses a keyless scrape of DuckDuckGo's HTML endpoint — no API key
@@ -194,6 +239,11 @@ frontend/
                       TicketForm, AddDocumentModal, AddCategoryModal, CategoryBrowse, Highlighted,
                       KnowledgeDashboard (Insights views), KnowledgeGraph (scoped Entity
                       Explorer), entityCategories (shared color/label maps), LocalResultsList
+desktop/
+  main.js           Electron shell: boots the backend in-process, opens the window
+  loading.html      Splash shown while the embedded server starts
+  prep.js           Copies backend src + frontend dist in before packaging
+  package.json      Electron + electron-builder config (Windows NSIS installer)
 ```
 
 ## Known limitations / next steps
