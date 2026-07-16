@@ -85,10 +85,13 @@ CREATE VIRTUAL TABLE IF NOT EXISTS search_fts USING fts5(
 `);
 
 const DEFAULT_CATEGORIES = [
-  'Alarms & Errors',
+  'Alarms & Diagnostics',
   'Maintenance',
   'Programming',
   'Wiring',
+  'Networking',
+  'MTConnect / Options',
+  'Testing / Sanity Checks',
   'Tickets/Support Cases',
   'Parts',
   'Uncategorized',

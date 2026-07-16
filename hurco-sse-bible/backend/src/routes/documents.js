@@ -85,26 +85,35 @@ documentsRouter.post('/', upload.single('file'), async (req, res) => {
   const extractedText = await extractText(file.path, file.mimetype);
   const docTitle = title?.trim() || file.originalname;
 
+  const supersedesId = supersedes_document_id ? Number(supersedes_document_id) : null;
+  const previous = supersedesId
+    ? db.prepare('SELECT * FROM documents WHERE id = ?').get(supersedesId)
+    : null;
+
+  // Replacing a document (e.g. swapping a placeholder for the real manual) should
+  // continue its filing, not start from scratch — inherit category/tags unless the
+  // caller explicitly overrides them.
   let categoryId = category_id ? Number(category_id) : null;
   let categorySuggested = 0;
-  if (!categoryId) {
+  if (!categoryId && previous) {
+    categoryId = previous.category_id;
+    categorySuggested = previous.category_suggested;
+  } else if (!categoryId) {
     const suggestedName = suggestCategory(docTitle, extractedText);
     categoryId = getCategoryIdByName(suggestedName);
     categorySuggested = 1;
   }
 
+  const inheritTags = tags === undefined && previous ? getDocumentTags(previous.id) : null;
+
   let versionNumber = 1;
   let originalDocumentId = null;
-  const supersedesId = supersedes_document_id ? Number(supersedes_document_id) : null;
 
   const insertTx = db.transaction(() => {
-    if (supersedesId) {
-      const previous = db.prepare('SELECT * FROM documents WHERE id = ?').get(supersedesId);
-      if (previous) {
-        originalDocumentId = previous.original_document_id || previous.id;
-        versionNumber = previous.version_number + 1;
-        db.prepare('UPDATE documents SET is_current = 0 WHERE id = ?').run(previous.id);
-      }
+    if (previous) {
+      originalDocumentId = previous.original_document_id || previous.id;
+      versionNumber = previous.version_number + 1;
+      db.prepare('UPDATE documents SET is_current = 0 WHERE id = ?').run(previous.id);
     }
 
     const info = db
@@ -129,8 +138,22 @@ documentsRouter.post('/', upload.single('file'), async (req, res) => {
 
     const documentId = info.lastInsertRowid;
 
-    if (tags) {
-      const tagNames = Array.isArray(tags) ? tags : String(tags).split(',');
+    if (previous) {
+      // Carry ticket links forward so superseding a document (e.g. swapping in the
+      // real manual for a placeholder) doesn't silently orphan existing tickets that
+      // reference it — they point at whichever version is_current.
+      const linkedTicketIds = db
+        .prepare('SELECT ticket_id FROM document_ticket_links WHERE document_id = ?')
+        .all(previous.id)
+        .map((r) => r.ticket_id);
+      const linkTicket = db.prepare(
+        'INSERT OR IGNORE INTO document_ticket_links (document_id, ticket_id) VALUES (?, ?)'
+      );
+      for (const ticketId of linkedTicketIds) linkTicket.run(documentId, ticketId);
+    }
+
+    const tagNames = inheritTags || (tags ? (Array.isArray(tags) ? tags : String(tags).split(',')) : null);
+    if (tagNames) {
       const tagIds = upsertTags(tagNames);
       const linkTag = db.prepare(
         'INSERT OR IGNORE INTO document_tags (document_id, tag_id) VALUES (?, ?)'

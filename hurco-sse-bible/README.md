@@ -35,8 +35,29 @@ cd frontend && npm run dev    # http://localhost:5173
 Open http://localhost:5173. The Vite dev server proxies `/api` and `/uploads` to the backend.
 
 The SQLite database is created at `backend/data/bible.db` on first run, seeded with default
-categories (Alarms & Errors, Maintenance, Programming, Wiring, Tickets/Support Cases, Parts,
-Uncategorized). Uploaded files are stored in `backend/uploads/`.
+categories (Alarms & Diagnostics, Maintenance, Programming, Wiring, Networking,
+MTConnect / Options, Testing / Sanity Checks, Tickets/Support Cases, Parts, Uncategorized).
+Uploaded files are stored in `backend/uploads/`.
+
+## Seed content
+
+```bash
+cd backend && npm run seed
+```
+
+Loads prior Hurco SSE technical discussions (networking setup, a Delta spindle NavErr
+analysis, a threading-block parameter issue, MTConnect/Ultimonitor licensing, and sanity-check
+references) as documents and tickets, cross-linked and tagged. Safe to re-run — it skips any
+title that already exists.
+
+Several entries reference full source documents (`Hurco_Network_Guide.docx`,
+`MTConnect_Adapter_Setup_and_Troubleshooting.docx`, `Full_System_Software_Sanity_Check_2_0.docx`,
+the WinMax Mill User Guide PDF) that weren't available to seed directly, so those are created as
+placeholder documents containing the summarized notes. Once you have the real files, upload each
+one via "Add Document" → "This replaces an existing document" → select the matching placeholder.
+Superseding a document now inherits its category and tags automatically (unless you override
+them), and any tickets already linked to the placeholder stay linked to the new version — so
+replacing a placeholder doesn't create a duplicate or break existing cross-references.
 
 ## Features (MVP)
 
@@ -72,6 +93,7 @@ backend/
     categorize.js   Keyword-based category suggestion
     textExtract.js  PDF/DOCX/TXT text extraction
     websearch.js    Pluggable web search (DuckDuckGo scrape or Bing API)
+    seed.js         Loads the built-in Hurco SSE seed content (see "Seed content" above)
     routes/         documents, tickets, categories, search
   uploads/          Uploaded files live here (gitignored)
   data/             SQLite DB lives here (gitignored)
@@ -84,6 +106,10 @@ frontend/
 
 ## Known limitations / next steps
 
+- **Redacted service password**: this repo is public, so the seed script replaces the literal
+  Hurco service password (used for machine file-explorer/service access) with a placeholder
+  string. If you want the real value indexed for search, edit `backend/src/seed.js` locally
+  (don't commit the change) or add it as a private note after seeding.
 - Auto-categorization is keyword-based, not ML-based — it's a starting suggestion, not a
   guarantee. Re-file freely.
 - No authentication — this is meant to run locally for a single user.

@@ -1,7 +1,8 @@
 const CATEGORY_KEYWORDS = {
-  'Alarms & Errors': [
+  'Alarms & Diagnostics': [
     'alarm', 'error code', 'fault', 'e-stop', 'estop', 'servo error',
     'overtravel', 'axis error', 'spindle alarm', 'warning code',
+    'naverr', 'servo fault', 'ethercat',
   ],
   Maintenance: [
     'maintenance', 'lubrication', 'lube', 'grease', 'pm schedule',
@@ -10,11 +11,23 @@ const CATEGORY_KEYWORDS = {
   ],
   Programming: [
     'g-code', 'gcode', 'm-code', 'macro', 'cnc program', 'conversational',
-    'subroutine', 'canned cycle', 'post processor', 'winmax',
+    'subroutine', 'canned cycle', 'post processor', 'threading', 'turning',
   ],
   Wiring: [
     'wiring', 'schematic', 'wire diagram', 'connector', 'pinout',
     'voltage', 'relay', 'terminal block', 'electrical diagram',
+  ],
+  Networking: [
+    'ethernet', 'wi-fi', 'wifi', 'workgroup', 'domain', 'ftp',
+    'drive mapping', 'vpn', 'ipconfig', 'network drive', 'unc path',
+  ],
+  'MTConnect / Options': [
+    'mtconnect', 'ultimonitor', 'opticlient', 'wcfdataservice',
+    'digicert', 'license code', 'vendor number',
+  ],
+  'Testing / Sanity Checks': [
+    'sanity check', 'sanity test', 'checklist', 'tool changer',
+    'rigid tapping', 'cutter comp',
   ],
   Parts: [
     'part number', 'spare part', 'replacement part', 'bill of materials',
