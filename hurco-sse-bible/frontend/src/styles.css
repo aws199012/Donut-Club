@@ -1,14 +1,23 @@
 :root {
-  --bg: #f7f6f3;
-  --panel: #ffffff;
-  --border: #ddd8ce;
-  --text: #2b2822;
-  --muted: #7a746a;
-  --accent: #8a5a2b;
-  --accent-dark: #6e4520;
-  --sidebar-bg: #26241f;
-  --sidebar-text: #e8e4da;
-  --sidebar-muted: #a49c8c;
+  /* Hurco brand: near-black base, red accent, cyan secondary accent */
+  --bg: #0b0a0a;
+  --bg-glow: radial-gradient(ellipse 70% 55% at 50% 30%, rgba(150, 18, 18, 0.35), rgba(11, 10, 10, 0) 70%);
+  --panel: #1b1919;
+  --panel-alt: #131111;
+  --border: #332e2e;
+  --text: #f1efec;
+  --muted: #a89f99;
+  --accent: #cf2323;
+  --accent-hover: #ea3d3d;
+  --link: #ff7a7a;
+  --cyan: #29b6d8;
+  --sidebar-bg: #000000;
+  --sidebar-text: #f1efec;
+  --sidebar-muted: #948b86;
+  --tag-bg: rgba(207, 35, 35, 0.16);
+  --tag-text: #ff9d9d;
+  --mark-bg: #f2b705;
+  --mark-text: #221a00;
 }
 
 * { box-sizing: border-box; }
@@ -17,7 +26,8 @@ body {
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
   color: var(--text);
-  background: var(--bg);
+  background: var(--bg-glow), var(--bg);
+  background-attachment: fixed;
 }
 
 .app-shell {
@@ -34,6 +44,7 @@ body {
   flex-direction: column;
   padding: 1rem;
   overflow-y: auto;
+  border-right: 1px solid var(--border);
 }
 
 .sidebar-header {
@@ -65,6 +76,7 @@ body {
   text-transform: none;
   letter-spacing: normal;
   font-size: 0.75rem;
+  text-decoration: underline;
 }
 .sidebar-add-category:hover { color: var(--sidebar-text); }
 
@@ -126,6 +138,8 @@ body {
   border: 1px solid var(--border);
   border-radius: 6px;
   font-size: 0.95rem;
+  background: var(--panel-alt);
+  color: var(--text);
 }
 
 .main-pane {
@@ -161,12 +175,12 @@ body {
   border-color: var(--accent);
   color: white;
 }
-.btn-primary:hover { background: var(--accent-dark); }
+.btn-primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
 
 .link-btn {
   background: none;
   border: none;
-  color: var(--accent-dark);
+  color: var(--link);
   cursor: pointer;
   padding: 0;
   font-size: inherit;
@@ -185,8 +199,8 @@ body {
 
 .tag {
   display: inline-block;
-  background: #eee7d9;
-  color: #5a4a2a;
+  background: var(--tag-bg);
+  color: var(--tag-text);
   border-radius: 999px;
   padding: 0.15rem 0.65rem;
   font-size: 0.8rem;
@@ -203,7 +217,7 @@ body {
 }
 
 .text-preview {
-  background: var(--panel);
+  background: var(--panel-alt);
   border: 1px solid var(--border);
   border-radius: 6px;
   padding: 1rem;
@@ -223,7 +237,7 @@ body {
 }
 
 .muted { color: var(--muted); }
-.error { color: #a3312a; }
+.error { color: #ff8080; }
 
 .result-source-label {
   font-size: 0.8rem;
@@ -234,8 +248,8 @@ body {
   display: inline-block;
   margin-bottom: 0.75rem;
 }
-.result-source-label.local { background: #e4ecdf; color: #3d5c2d; }
-.result-source-label.web { background: #dce8f2; color: #2a5075; }
+.result-source-label.local { background: rgba(80, 160, 90, 0.18); color: #8fd39a; }
+.result-source-label.web { background: rgba(41, 182, 216, 0.16); color: var(--cyan); }
 
 .result-section { margin-bottom: 2rem; }
 
@@ -252,11 +266,11 @@ body {
   cursor: pointer;
 }
 .result-list li:hover { border-color: var(--accent); }
-.result-list a.result-title { color: var(--accent-dark); }
+.result-list a.result-title { color: var(--link); }
 
 .result-title { font-weight: 600; margin-bottom: 0.25rem; }
 .result-snippet { color: var(--muted); font-size: 0.88rem; }
-.result-snippet mark { background: #ffe08a; padding: 0 0.1em; }
+.result-snippet mark { background: var(--mark-bg); color: var(--mark-text); padding: 0 0.1em; border-radius: 2px; }
 
 .dropzone {
   border: 2px dashed var(--border);
@@ -271,7 +285,7 @@ body {
 .modal-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.4);
+  background: rgba(0,0,0,0.6);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -280,6 +294,7 @@ body {
 
 .modal {
   background: var(--panel);
+  border: 1px solid var(--border);
   border-radius: 10px;
   padding: 1.5rem 2rem;
   width: 480px;
@@ -295,6 +310,8 @@ body {
   border-radius: 6px;
   font-size: 0.92rem;
   font-family: inherit;
+  background: var(--panel-alt);
+  color: var(--text);
 }
 .form fieldset { border: 1px solid var(--border); border-radius: 6px; }
 .checkbox-list { display: flex; flex-direction: column; gap: 0.3rem; max-height: 160px; overflow-y: auto; }
