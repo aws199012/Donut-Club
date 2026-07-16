@@ -112,11 +112,15 @@ automatically the first time you start the backend after pulling this update.
 In the graph: node size = importance, edge thickness = co-occurrence strength, color = entity
 category (see the in-graph legend). It starts with only the central search term and its
 top ~12 most relevant entities shown (a dashed gold outline means a node has more hidden
-neighbors) — click a node to reveal its connections, drag nodes to rearrange, hover for a
-tooltip (mention count, weight, source documents), and click an edge to see the exact excerpt(s)
-that produced it, with a link back to the source document/ticket. If a search doesn't turn up
-enough structured detail for a useful graph, this tab shows a short note and falls back to the
-same library list as the Documents tab.
+neighbors). Clicking a node selects it: a detail panel opens showing its category, a short
+in-context summary, mention/source counts, its connected entities (each clickable to jump
+there next), and the source excerpts it was found in — while the graph spotlights the selected
+node and its edges and dims everything unrelated. Clicking a node also reveals any hidden
+neighbors it has. Clicking an edge opens the same panel focused on that relationship — the
+exact excerpt(s) where the two entities co-occur, with links back to the source
+document/ticket. Clicking empty space closes the panel; dragging rearranges nodes. If a search
+doesn't turn up enough structured detail for a useful graph, this tab shows a short note and
+falls back to the same library list as the Documents tab.
 
 **On accuracy**: this is heuristic pattern-matching, not real language understanding, so expect
 occasional noise — a few known false positives from the generic NLP pass (e.g. a document title

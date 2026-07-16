@@ -30,6 +30,19 @@ const CATEGORY_LABELS = {
   event: 'Events',
 };
 
+const CATEGORY_SINGULAR = {
+  query: 'Search term',
+  person: 'Person',
+  company: 'Company',
+  place: 'Location',
+  date: 'Date',
+  technology: 'Technology',
+  part: 'Machine part',
+  alarm: 'Alarm / fault',
+  software: 'Software',
+  event: 'Event',
+};
+
 const MIN_ENTITIES_FOR_GRAPH = 3;
 
 function nodeRadius(node) {
@@ -45,21 +58,35 @@ function truncate(text, max) {
   return text.length > max ? `${text.slice(0, max - 1)}…` : text;
 }
 
+function edgeTouches(edge, key) {
+  return edge.a === key || edge.b === key;
+}
+
+function sameEdge(e1, e2) {
+  return (e1.a === e2.a && e1.b === e2.b) || (e1.a === e2.b && e1.b === e2.a);
+}
+
 export default function KnowledgeGraph({ graph, local, onOpenDocument, onOpenTicket }) {
   const svgRef = useRef(null);
   const containerRef = useRef(null);
   const persistentNodesRef = useRef(new Map());
   const simulationRef = useRef(null);
+  const nodeSelRef = useRef(null);
+  const linkSelRef = useRef(null);
+  const applyHighlightRef = useRef(() => {});
 
   const [revealed, setRevealed] = useState(
     () => new Set(graph.nodes.filter((n) => n.initial).map((n) => n.key))
   );
-  const [selectedEdge, setSelectedEdge] = useState(null);
+  // selected: { type: 'node', key } | { type: 'edge', a, b, weight, citations } | null
+  const [selected, setSelected] = useState(null);
   const [tooltip, setTooltip] = useState(null);
+
+  const nodeByKey = useMemo(() => new Map(graph.nodes.map((n) => [n.key, n])), [graph]);
 
   useEffect(() => {
     setRevealed(new Set(graph.nodes.filter((n) => n.initial).map((n) => n.key)));
-    setSelectedEdge(null);
+    setSelected(null);
     setTooltip(null);
     persistentNodesRef.current = new Map();
   }, [graph]);
@@ -81,9 +108,15 @@ export default function KnowledgeGraph({ graph, local, onOpenDocument, onOpenTic
     return keys;
   }, [graph, revealed]);
 
-  const expandNode = (key) => {
+  // Selecting a node opens its detail panel AND reveals its hidden neighbors
+  // (progressive disclosure), so the panel's "connected entities" list matches
+  // what appears in the graph.
+  const selectNode = (key) => {
+    setSelected({ type: 'node', key });
+    setTooltip(null);
     setRevealed((prev) => {
       const next = new Set(prev);
+      next.add(key);
       for (const e of graph.edges) {
         if (e.a === key) next.add(e.b);
         if (e.b === key) next.add(e.a);
@@ -92,7 +125,77 @@ export default function KnowledgeGraph({ graph, local, onOpenDocument, onOpenTic
     });
   };
 
+  const selectedNode = selected?.type === 'node' ? nodeByKey.get(selected.key) : null;
+
+  const neighborRows = useMemo(() => {
+    if (!selectedNode) return [];
+    const rows = [];
+    for (const e of graph.edges) {
+      let otherKey = null;
+      if (e.a === selectedNode.key) otherKey = e.b;
+      else if (e.b === selectedNode.key) otherKey = e.a;
+      if (!otherKey || otherKey === '__query__') continue;
+      const node = nodeByKey.get(otherKey);
+      if (node) rows.push({ node, weight: e.weight, kind: e.kind });
+    }
+    rows.sort((x, y) => y.weight - x.weight);
+    return rows;
+  }, [selectedNode, graph, nodeByKey]);
+
   const isSparse = graph.meta.entityCount + (graph.meta.eventCount || 0) < MIN_ENTITIES_FOR_GRAPH;
+
+  // Reassigned every render so it always sees the current selection/reveal state;
+  // both the build effect and the selection effect call through this ref.
+  applyHighlightRef.current = () => {
+    const nodeSel = nodeSelRef.current;
+    const linkSel = linkSelRef.current;
+    if (!nodeSel || !linkSel) return;
+
+    const baseCircleStroke = (d) =>
+      d.isCentral ? '#cf2323' : hasHiddenNeighbors.has(d.key) ? '#f2b705' : '#0b0a0a';
+    const baseCircleStrokeWidth = (d) => (d.isCentral ? 4 : hasHiddenNeighbors.has(d.key) ? 3 : 1.5);
+    const baseLinkStroke = (d) => (d.kind === 'relevance' ? '#6b6058' : '#8a8078');
+
+    if (!selected) {
+      nodeSel.attr('opacity', 1);
+      nodeSel
+        .select('circle')
+        .attr('stroke', baseCircleStroke)
+        .attr('stroke-width', baseCircleStrokeWidth);
+      linkSel.attr('stroke', baseLinkStroke).attr('stroke-opacity', 0.55);
+      return;
+    }
+
+    if (selected.type === 'node') {
+      const focus = new Set([selected.key]);
+      for (const e of graph.edges) {
+        if (e.a === selected.key) focus.add(e.b);
+        if (e.b === selected.key) focus.add(e.a);
+      }
+      nodeSel.attr('opacity', (d) => (focus.has(d.key) ? 1 : 0.18));
+      nodeSel
+        .select('circle')
+        .attr('stroke', (d) => (d.key === selected.key ? '#ffffff' : baseCircleStroke(d)))
+        .attr('stroke-width', (d) => (d.key === selected.key ? 4.5 : baseCircleStrokeWidth(d)));
+      linkSel
+        .attr('stroke', (d) => (edgeTouches(d, selected.key) ? '#e05252' : baseLinkStroke(d)))
+        .attr('stroke-opacity', (d) => (edgeTouches(d, selected.key) ? 0.95 : 0.1));
+    } else {
+      // edge selection: spotlight the two endpoints and that single edge
+      nodeSel.attr('opacity', (d) => (d.key === selected.a || d.key === selected.b ? 1 : 0.18));
+      nodeSel
+        .select('circle')
+        .attr('stroke', (d) =>
+          d.key === selected.a || d.key === selected.b ? '#ffffff' : baseCircleStroke(d)
+        )
+        .attr('stroke-width', (d) =>
+          d.key === selected.a || d.key === selected.b ? 4 : baseCircleStrokeWidth(d)
+        );
+      linkSel
+        .attr('stroke', (d) => (sameEdge(d, selected) ? '#e05252' : baseLinkStroke(d)))
+        .attr('stroke-opacity', (d) => (sameEdge(d, selected) ? 1 : 0.1));
+    }
+  };
 
   useEffect(() => {
     if (isSparse || !svgRef.current) return undefined;
@@ -122,7 +225,8 @@ export default function KnowledgeGraph({ graph, local, onOpenDocument, onOpenTic
 
     const svg = d3.select(svgRef.current);
     svg.selectAll('*').remove();
-    svg.attr('viewBox', [0, 0, width, height]).on('click', () => setSelectedEdge(null));
+    // Clicking empty space (not a node/edge — those stopPropagation) closes the panel.
+    svg.attr('viewBox', [0, 0, width, height]).on('click', () => setSelected(null));
 
     const g = svg.append('g');
     svg.call(
@@ -140,7 +244,10 @@ export default function KnowledgeGraph({ graph, local, onOpenDocument, onOpenTic
       .style('cursor', (d) => (d.citations?.length ? 'pointer' : 'default'))
       .on('click', (event, d) => {
         event.stopPropagation();
-        if (d.citations?.length) setSelectedEdge(d);
+        if (d.citations?.length) {
+          setSelected({ type: 'edge', a: d.a, b: d.b, weight: d.weight, citations: d.citations });
+          setTooltip(null);
+        }
       });
 
     const nodeGroup = g
@@ -152,6 +259,9 @@ export default function KnowledgeGraph({ graph, local, onOpenDocument, onOpenTic
       .call(
         d3
           .drag()
+          // Without this, any sub-pixel mouse jitter during a click turns it into a
+          // zero-length drag and the click never fires. Within 6px it's a click.
+          .clickDistance(6)
           .on('start', (event, d) => {
             if (!event.active) simulationRef.current.alphaTarget(0.3).restart();
             d.fx = d.x;
@@ -169,7 +279,7 @@ export default function KnowledgeGraph({ graph, local, onOpenDocument, onOpenTic
       )
       .on('click', (event, d) => {
         event.stopPropagation();
-        expandNode(d.key);
+        selectNode(d.key);
       })
       .on('mouseenter', (event, d) => {
         const rect = containerRef.current.getBoundingClientRect();
@@ -225,9 +335,19 @@ export default function KnowledgeGraph({ graph, local, onOpenDocument, onOpenTic
       });
 
     simulationRef.current = simulation;
+    nodeSelRef.current = nodeGroup;
+    linkSelRef.current = linkSel;
+    applyHighlightRef.current();
+
     return () => simulation.stop();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visibleNodes, visibleEdges, isSparse]);
+
+  // Re-apply spotlight styling whenever the selection (or the set of nodes with
+  // hidden neighbors) changes, without rebuilding the whole simulation.
+  useEffect(() => {
+    applyHighlightRef.current();
+  }, [selected, hasHiddenNeighbors]);
 
   if (isSparse) {
     return (
@@ -240,6 +360,41 @@ export default function KnowledgeGraph({ graph, local, onOpenDocument, onOpenTic
       </div>
     );
   }
+
+  const renderSourceButton = (type, id, title, key) => (
+    <button
+      key={key}
+      className="graph-citation-source"
+      onClick={() => (type === 'document' ? onOpenDocument(id) : onOpenTicket(id))}
+    >
+      {type === 'document' ? '📄' : '🎫'} {title}
+    </button>
+  );
+
+  const nodeSummary = (node) => {
+    if (node.isCentral) {
+      return 'Your search term — linked to the most relevant entities found across the matching documents and tickets.';
+    }
+    if (node.category === 'event') {
+      return 'A dated action detected in the text (a sentence containing both a date and an action like replaced, failed, installed…).';
+    }
+    const kind = (CATEGORY_SINGULAR[node.category] || node.category).toLowerCase();
+    const srcCount = node.sources?.length || 0;
+    const top = neighborRows
+      .slice(0, 3)
+      .map((r) => r.node.text)
+      .join(', ');
+    return (
+      `A ${kind} mentioned ${node.count} time${node.count === 1 ? '' : 's'} across ` +
+      `${srcCount} source${srcCount === 1 ? '' : 's'} in these results` +
+      (top ? `, most often alongside ${top}.` : '.')
+    );
+  };
+
+  const selectedEdgeNodes =
+    selected?.type === 'edge'
+      ? { a: nodeByKey.get(selected.a), b: nodeByKey.get(selected.b) }
+      : null;
 
   return (
     <div className="graph-shell" ref={containerRef}>
@@ -254,12 +409,11 @@ export default function KnowledgeGraph({ graph, local, onOpenDocument, onOpenTic
 
       <svg ref={svgRef} className="graph-svg" />
 
-      {hasHiddenNeighbors.size > 0 && (
-        <p className="graph-hint muted">
-          Dashed gold outline = more connections to reveal. Click a node to expand it, drag to
-          rearrange, click an edge for supporting excerpts.
-        </p>
-      )}
+      <p className="graph-hint muted">
+        Click a node for its details and connections · click an edge for the excerpts linking two
+        entities · drag to rearrange · click empty space to close the panel.
+        {hasHiddenNeighbors.size > 0 && ' Dashed gold outline = more connections to reveal.'}
+      </p>
 
       {graph.meta.truncated && (
         <p className="graph-hint muted">
@@ -268,46 +422,120 @@ export default function KnowledgeGraph({ graph, local, onOpenDocument, onOpenTic
         </p>
       )}
 
-      {tooltip && (
-        <div
-          className="graph-tooltip"
-          style={{ left: tooltip.x + 14, top: tooltip.y + 14 }}
-        >
+      {tooltip && !selected && (
+        <div className="graph-tooltip" style={{ left: tooltip.x + 14, top: tooltip.y + 14 }}>
           <div className="graph-tooltip-title">{tooltip.node.text}</div>
-          <div className="graph-tooltip-category">{CATEGORY_LABELS[tooltip.node.category] || tooltip.node.category}</div>
+          <div className="graph-tooltip-category">
+            {CATEGORY_LABELS[tooltip.node.category] || tooltip.node.category}
+          </div>
           {!tooltip.node.isCentral && (
-            <div className="graph-tooltip-score">Mentions: {tooltip.node.count} · Weight: {Math.round(tooltip.node.importance * 10) / 10}</div>
+            <div className="graph-tooltip-score">
+              Mentions: {tooltip.node.count} · Weight: {Math.round(tooltip.node.importance * 10) / 10}
+            </div>
           )}
-          {tooltip.node.sources?.length > 0 && (
-            <div className="graph-tooltip-sources">
-              Source{tooltip.node.sources.length > 1 ? 's' : ''}:{' '}
-              {tooltip.node.sources.slice(0, 3).map((s) => s.title).join(', ')}
+          <div className="graph-tooltip-sources">Click for details & connections</div>
+        </div>
+      )}
+
+      {selectedNode && (
+        <div className="graph-detail-panel" onClick={(e) => e.stopPropagation()}>
+          <div className="graph-detail-header">
+            <span
+              className="graph-chip"
+              style={{ background: CATEGORY_COLORS[selectedNode.category] || '#ccc' }}
+            >
+              {CATEGORY_SINGULAR[selectedNode.category] || selectedNode.category}
+            </span>
+            <button className="graph-citation-close" onClick={() => setSelected(null)}>✕</button>
+          </div>
+          <h3 className="graph-detail-title">{selectedNode.text}</h3>
+
+          {!selectedNode.isCentral && (
+            <div className="graph-detail-stats">
+              {selectedNode.count} mention{selectedNode.count === 1 ? '' : 's'} ·{' '}
+              {selectedNode.sources?.length || 0} source
+              {(selectedNode.sources?.length || 0) === 1 ? '' : 's'} · weight{' '}
+              {Math.round(selectedNode.importance * 10) / 10}
+            </div>
+          )}
+
+          <p className="graph-detail-summary">{nodeSummary(selectedNode)}</p>
+
+          {neighborRows.length > 0 && (
+            <div className="graph-detail-section">
+              <h4>Connected entities</h4>
+              <ul className="graph-neighbor-list">
+                {neighborRows.map(({ node, weight }) => (
+                  <li key={node.key}>
+                    <button className="graph-neighbor-btn" onClick={() => selectNode(node.key)}>
+                      <span
+                        className="graph-legend-dot"
+                        style={{ background: CATEGORY_COLORS[node.category] || '#ccc' }}
+                      />
+                      <span className="graph-neighbor-name">{node.text}</span>
+                      <span className="graph-neighbor-weight">×{Math.round(weight * 10) / 10}</span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {selectedNode.sources?.length > 0 && (
+            <div className="graph-detail-section">
+              <h4>Supporting excerpts</h4>
+              <ul className="graph-citation-list">
+                {selectedNode.sources.map((s, i) => (
+                  <li key={i}>
+                    {(s.excerpts || []).map((ex, j) => (
+                      <div className="graph-citation-excerpt" key={j}>"{ex}"</div>
+                    ))}
+                    {renderSourceButton(s.type, s.id, s.title, `src-${i}`)}
+                  </li>
+                ))}
+              </ul>
             </div>
           )}
         </div>
       )}
 
-      {selectedEdge && (
-        <div className="graph-citation-panel">
-          <div className="graph-citation-header">
-            <span>Supporting excerpts</span>
-            <button className="graph-citation-close" onClick={() => setSelectedEdge(null)}>✕</button>
+      {selected?.type === 'edge' && selectedEdgeNodes && (
+        <div className="graph-detail-panel" onClick={(e) => e.stopPropagation()}>
+          <div className="graph-detail-header">
+            <span className="graph-chip graph-chip-relationship">Relationship</span>
+            <button className="graph-citation-close" onClick={() => setSelected(null)}>✕</button>
           </div>
-          <ul className="graph-citation-list">
-            {selectedEdge.citations.map((c, i) => (
-              <li key={i}>
-                <div className="graph-citation-excerpt">"{c.excerpt}"</div>
-                <button
-                  className="graph-citation-source"
-                  onClick={() =>
-                    c.sourceType === 'document' ? onOpenDocument(c.sourceId) : onOpenTicket(c.sourceId)
-                  }
-                >
-                  {c.sourceType === 'document' ? '📄' : '🎫'} {c.sourceTitle}
-                </button>
-              </li>
-            ))}
-          </ul>
+          <h3 className="graph-detail-title">
+            <button
+              className="graph-detail-endpoint"
+              onClick={() => selectNode(selected.a)}
+            >
+              {selectedEdgeNodes.a?.text || selected.a}
+            </button>
+            {' ↔ '}
+            <button
+              className="graph-detail-endpoint"
+              onClick={() => selectNode(selected.b)}
+            >
+              {selectedEdgeNodes.b?.text || selected.b}
+            </button>
+          </h3>
+          <p className="graph-detail-summary">
+            These two appear together in {selected.weight} paragraph
+            {selected.weight === 1 ? '' : 's'} across the matched results. The excerpts below are
+            where the pairing was found.
+          </p>
+          <div className="graph-detail-section">
+            <h4>Supporting excerpts</h4>
+            <ul className="graph-citation-list">
+              {selected.citations.map((c, i) => (
+                <li key={i}>
+                  <div className="graph-citation-excerpt">"{c.excerpt}"</div>
+                  {renderSourceButton(c.sourceType, c.sourceId, c.sourceTitle, `cit-${i}`)}
+                </li>
+              ))}
+            </ul>
+          </div>
         </div>
       )}
     </div>
