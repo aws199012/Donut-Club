@@ -79,15 +79,15 @@ replacing a placeholder doesn't create a duplicate or break existing cross-refer
    or nested categories from the sidebar's "+ new" link.
 7. **Tickets** — their own entry type: problem, resolution, machine/model, date, tags, and
    links to related documents (and vice versa from the document view).
-8. **Knowledge graph** — a second results tab (alongside "Documents") that visualizes the
+8. **Insights dashboard** — a second results tab (alongside "Documents") that turns the
    people, companies, technologies, parts, alarms, software, locations, dates, and events found
-   across your matching documents/tickets, and how they relate. See "Knowledge graph" below.
+   across your matching documents/tickets into a structured knowledge dashboard (with timeline,
+   concept-cluster, and scoped connection views). See "Insights dashboard" below.
 
-## Knowledge graph
+## Insights dashboard
 
-Every search has a second tab, "Knowledge Graph", next to "Documents". It's a force-directed
-graph (D3) built entirely from a local, offline extraction pipeline — **no API calls, no LLM,
-no per-search cost**:
+Every search has a second tab, "Insights", next to "Documents". It's built entirely from a
+local, offline extraction pipeline — **no API calls, no LLM, no per-search cost**:
 
 - **Entity extraction** uses [`compromise`](https://github.com/spencermountain/compromise) (a
   local JS NLP library) to find people, companies/organizations, places, and dates, plus a
@@ -106,21 +106,35 @@ no per-search cost**:
 
 This all runs once, when a document/ticket is added or edited (`graph_data` column, computed by
 `backend/src/graph/store.js`), not on every search — searching just merges the already-computed
-per-document data for whichever documents/tickets matched. Existing databases get backfilled
-automatically the first time you start the backend after pulling this update.
+per-document data for whichever documents/tickets matched. Stored extraction data is versioned:
+whenever the extraction rules or dictionary change, the backend re-extracts your whole library
+automatically on the next startup, so tuning fixes reach existing documents with no manual step.
 
-In the graph: node size = importance, edge thickness = co-occurrence strength, color = entity
-category (see the in-graph legend). It starts with only the central search term and its
-top ~12 most relevant entities shown (a dashed gold outline means a node has more hidden
-neighbors). Clicking a node selects it: a detail panel opens showing its category, a short
-in-context summary, mention/source counts, its connected entities (each clickable to jump
-there next), and the source excerpts it was found in — while the graph spotlights the selected
-node and its edges and dims everything unrelated. Clicking a node also reveals any hidden
-neighbors it has. Clicking an edge opens the same panel focused on that relationship — the
-exact excerpt(s) where the two entities co-occur, with links back to the source
-document/ticket. Clicking empty space closes the panel; dragging rearranges nodes. If a search
-doesn't turn up enough structured detail for a useful graph, this tab shows a short note and
-falls back to the same library list as the Documents tab.
+The Insights tab presents that data as structured views (an earlier iteration used a full
+force-directed node graph; it became an unreadable hairball as entity counts grew, so it was
+replaced — a scoped remnant of it survives as the Entity Explorer below):
+
+- **Knowledge Dashboard** (default) — an executive summary (templated locally from the top
+  entities, categories, and strongest co-occurrence — not an LLM), then one card per entity
+  category (People, Companies, Technologies, Software, Parts & Products, Risks/Issues, Events,
+  Locations, Dates — empty sections are hidden) with entities ranked by importance, plus a
+  Concepts card of top keyword phrases and a Supporting Evidence section of source excerpts.
+  Clicking any entity expands it in place: which documents/tickets it appears in, the supporting
+  excerpts, and its most related entities as a ranked horizontal bar list — each related entity
+  clickable to jump to its own expanded view.
+- **Timeline view** — offered when enough dated items/events exist (and becomes the default when
+  results are strongly date-driven): matched dates and events in chronological order, each with
+  its excerpt and source link; relative mentions ("Tuesday") group at the bottom.
+- **Concept Clusters view** — offered when the results are concept-heavy: technologies, software,
+  parts, and faults grouped into tiles by co-occurrence (terms that keep showing up in the same
+  paragraphs cluster together), each chip clickable through to the dashboard entry.
+- **Entity Explorer** — the only node/edge visual left, and it never shows the full graph: it
+  opens only when you click "Show connections" on an entity, scoped to that entity plus its
+  direct neighbors. Node size = importance, edge thickness = co-occurrence strength; clicking
+  a node opens its detail panel, clicking an edge shows the excerpts behind that relationship.
+
+If a search doesn't turn up enough structured detail for a useful dashboard, the tab shows a
+short note and falls back to the same library list as the Documents tab.
 
 **On accuracy**: this is heuristic pattern-matching, not real language understanding, so expect
 occasional noise — a few known false positives from the generic NLP pass (e.g. a document title
@@ -178,7 +192,8 @@ frontend/
     App.jsx         Top-level layout/view state
     components/      Sidebar, SearchBar, SearchResults, DocumentDetail, TicketDetail,
                       TicketForm, AddDocumentModal, AddCategoryModal, CategoryBrowse, Highlighted,
-                      KnowledgeGraph (D3 force-directed graph), LocalResultsList
+                      KnowledgeDashboard (Insights views), KnowledgeGraph (scoped Entity
+                      Explorer), entityCategories (shared color/label maps), LocalResultsList
 ```
 
 ## Known limitations / next steps

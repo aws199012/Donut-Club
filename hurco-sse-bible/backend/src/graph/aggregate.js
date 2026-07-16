@@ -29,6 +29,7 @@ function addSourceRef(node, source, excerpts) {
 export function aggregateGraph(query, sources) {
   const nodeMap = new Map();
   const edgeMap = new Map();
+  const keywordTotals = new Map();
 
   for (const source of sources) {
     const sourceKey = `${source.type}:${source.id}`;
@@ -42,6 +43,10 @@ export function aggregateGraph(query, sources) {
       node.count += entity.count;
       node.importance += entity.importance ?? entity.count;
       addSourceRef(node, source, entity.excerpts || []);
+    }
+
+    for (const kw of graphData.keywords || []) {
+      keywordTotals.set(kw.phrase, (keywordTotals.get(kw.phrase) || 0) + kw.score);
     }
 
     for (const rel of relationships) {
@@ -134,10 +139,23 @@ export function aggregateGraph(query, sources) {
     ...keptEdges,
   ];
 
+  // Top RAKE keyword phrases merged across sources — powers the dashboard's
+  // "Concepts" card. Phrases that duplicate an already-extracted entity name are
+  // dropped so the same term doesn't show up twice under two sections, and long
+  // clause-like phrases (RAKE loves those) are dropped — a "concept" should read
+  // like a term, not a sentence fragment.
+  const entityTexts = new Set(keptNodes.map((n) => n.text.toLowerCase()));
+  const keywords = [...keywordTotals.entries()]
+    .filter(([phrase]) => !entityTexts.has(phrase) && phrase.split(' ').length <= 3)
+    .sort((x, y) => y[1] - x[1])
+    .slice(0, 12)
+    .map(([phrase, score]) => ({ phrase, score: Math.round(score * 10) / 10 }));
+
   return {
     query,
     nodes,
     edges,
+    keywords,
     meta: {
       matchedSources: sources.length,
       entityCount: keptNodes.filter((n) => n.category !== 'event').length,

@@ -9,10 +9,30 @@
 import nlp from 'compromise';
 import { FLAT_DICTIONARY } from './domainDictionary.js';
 
+// Bump whenever extraction rules/dictionary change: stored graph_data carries this
+// version, and the startup backfill (graph/store.js) re-extracts any record whose
+// stored version is older — so rule fixes propagate without manual re-saving.
+export const EXTRACT_VERSION = 2;
+
 // compromise's organization tagger fires on short all-caps tech abbreviations that
-// are common in this domain but aren't really "companies" (e.g. "OS" in "32-bit OS").
-// Small, targeted list — add to it as more false positives turn up.
-const ORG_FALSE_POSITIVES = new Set(['os', 'pc', 'it', 'id']);
+// are common in this domain but aren't really "companies" (e.g. "OS" in "32-bit OS",
+// "UNC" in "UNC path"). Small, targeted list — add as more false positives turn up.
+const ORG_FALSE_POSITIVES = new Set(['os', 'pc', 'it', 'id', 'unc']);
+
+// Doc/section-title fragments like "Licensing & Troubleshooting" get mistaken for
+// "X & Y"-style company names. An org candidate containing any of these generic
+// document words is rejected.
+const ORG_GENERIC_WORDS =
+  /\b(troubleshooting|setup|install(ation)?|licensing|guide|manual|sanity|check(list)?|overview|notes?)\b/i;
+
+// Person candidates that are really parameter/phrase fragments: reject names that
+// start with a preposition ("Before Z End") or contain a bare single-letter word
+// ("Z"); real middle initials come with a period and still pass.
+const PERSON_STARTS_WITH_PREPOSITION = /^(before|after|during|between|above|below|under|over|retract)\b/i;
+function looksLikePersonName(text) {
+  if (PERSON_STARTS_WITH_PREPOSITION.test(text)) return false;
+  return text.split(/\s+/).every((w) => w.length > 1 || /\./.test(w));
+}
 
 const ACTION_VERBS = [
   'replaced', 'installed', 'updated', 'failed', 'fixed', 'upgraded', 'reported',
@@ -87,12 +107,18 @@ function extractParagraphEntities(paragraph) {
 
   const doc = nlp(paragraph);
   const generic = [
-    ...doc.people().out('array').map((t) => ({ text: cleanEntityText(t), category: 'person' })),
+    ...doc
+      .people()
+      .out('array')
+      .map((t) => ({ text: cleanEntityText(t), category: 'person' }))
+      .filter((e) => looksLikePersonName(e.text)),
     ...doc
       .organizations()
       .out('array')
       .map((t) => ({ text: cleanEntityText(t), category: 'company' }))
-      .filter((e) => !ORG_FALSE_POSITIVES.has(e.text.toLowerCase())),
+      .filter(
+        (e) => !ORG_FALSE_POSITIVES.has(e.text.toLowerCase()) && !ORG_GENERIC_WORDS.test(e.text)
+      ),
     ...doc.places().out('array').map((t) => ({ text: cleanEntityText(t), category: 'place' })),
     ...doc
       .match('#Date+')
@@ -245,6 +271,7 @@ export function extractGraphData(text) {
   });
 
   return {
+    v: EXTRACT_VERSION,
     entities,
     relationships: [...pairTotals.values()],
     keywords,

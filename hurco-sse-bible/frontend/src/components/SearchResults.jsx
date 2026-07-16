@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { api } from '../api.js';
 import LocalResultsList from './LocalResultsList.jsx';
-import KnowledgeGraph from './KnowledgeGraph.jsx';
+import KnowledgeDashboard from './KnowledgeDashboard.jsx';
 
 export default function SearchResults({ query, local, onOpenDocument, onOpenTicket }) {
   const [tab, setTab] = useState('documents');
@@ -62,7 +62,7 @@ export default function SearchResults({ query, local, onOpenDocument, onOpenTick
           className={`result-tab ${tab === 'graph' ? 'active' : ''}`}
           onClick={() => setTab('graph')}
         >
-          Knowledge Graph
+          Insights
         </button>
       </div>
 
@@ -101,10 +101,10 @@ export default function SearchResults({ query, local, onOpenDocument, onOpenTick
 
       {tab === 'graph' && (
         <section className="result-section">
-          {graphLoading && <p className="muted">Building knowledge graph…</p>}
+          {graphLoading && <p className="muted">Analyzing results…</p>}
           {graphError && <p className="error">{graphError}</p>}
           {graph && (
-            <KnowledgeGraph
+            <KnowledgeDashboard
               graph={graph}
               local={local}
               onOpenDocument={onOpenDocument}
