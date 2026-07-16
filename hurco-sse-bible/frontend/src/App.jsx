@@ -38,11 +38,13 @@ export default function App() {
   const openNewTicket = () => setView({ type: 'ticketForm', id: null });
   const openEditTicket = (id) => setView({ type: 'ticketForm', id });
 
-  const onDocumentUploaded = (doc) => {
-    setShowAddModal(false);
+  const onDocumentUploaded = (docs, isSingleSuccess) => {
     refreshCategories();
     refreshDocuments();
-    openDocument(doc.id);
+    if (isSingleSuccess) {
+      setShowAddModal(false);
+      openDocument(docs[0].id);
+    }
   };
 
   const onTicketSaved = (id) => {

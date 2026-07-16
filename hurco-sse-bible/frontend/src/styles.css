@@ -90,28 +90,135 @@ body {
   padding-left: 1rem;
 }
 
-.sidebar-item {
+/* Retro pixel-art arcade buttons for the category list. This one class (plus the
+   --nested and .active modifiers) is the ONLY place category buttons are styled —
+   Sidebar.jsx renders every category (top-level, nested, seeded, or newly created
+   via "+ new") through the same renderNode() path, so new categories automatically
+   pick this up with no extra styling step. */
+.category-pixel-button {
+  position: relative;
   width: 100%;
+  min-height: 2.7rem;
+  margin: 0 2px 16px 2px;
+  padding: 0.55rem 0.7rem;
   display: flex;
-  justify-content: space-between;
-  background: none;
-  border: none;
-  color: var(--sidebar-text);
-  padding: 0.4rem 0.5rem;
-  border-radius: 4px;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  border: 2px solid #000;
+  color: #fff;
+  background: linear-gradient(180deg, #ff4040 0%, #d31f1f 55%, #b31414 100%);
+  font-family: 'Press Start 2P', 'Courier New', monospace;
+  font-size: 0.52rem;
+  line-height: 1.5;
+  letter-spacing: 0.02em;
+  text-shadow: 1px 1px 0 #000;
   cursor: pointer;
-  font-size: 0.92rem;
-  text-align: left;
+  clip-path: polygon(
+    6px 0, calc(100% - 6px) 0, 100% 6px,
+    100% calc(100% - 6px), calc(100% - 6px) 100%, 6px 100%,
+    0 calc(100% - 6px), 0 6px
+  );
+  box-shadow:
+    inset 0 3px 0 rgba(255, 255, 255, 0.4),
+    inset 0 -5px 0 rgba(60, 4, 4, 0.65),
+    4px 5px 0 0 #000;
+  transition: filter 0.15s ease, transform 0.08s ease, box-shadow 0.08s ease;
+  animation: pixel-idle 2.6s ease-in-out infinite;
 }
 
-.sidebar-item:hover { background: rgba(255,255,255,0.08); }
-.sidebar-item.active { background: var(--accent); color: white; }
-
-.sidebar-item .count {
-  color: var(--sidebar-muted);
-  font-size: 0.8rem;
+.category-pixel-button--nested {
+  min-height: 2.2rem;
+  padding: 0.45rem 0.6rem;
+  font-size: 0.46rem;
+  margin-bottom: 12px;
 }
-.sidebar-item.active .count { color: rgba(255,255,255,0.8); }
+
+.category-pixel-button-label {
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
+
+.category-pixel-button-count {
+  /* Positioned inside the button's own bounds (not overhanging the edge) since
+     the notched clip-path on the button would otherwise crop an overhanging badge. */
+  position: absolute;
+  top: 4px;
+  right: 8px;
+  min-width: 1.1rem;
+  height: 1.1rem;
+  padding: 0 0.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #000;
+  color: #fff;
+  border: 1px solid #fff;
+  border-radius: 999px;
+  font-size: 0.46rem;
+  font-family: 'Press Start 2P', 'Courier New', monospace;
+}
+
+.category-pixel-button:hover {
+  filter: brightness(1.15);
+  box-shadow:
+    inset 0 3px 0 rgba(255, 255, 255, 0.5),
+    inset 0 -5px 0 rgba(60, 4, 4, 0.65),
+    4px 5px 0 0 #000,
+    0 0 0 2px #ff8a8a;
+}
+
+.category-pixel-button:active {
+  transform: translate(3px, 4px);
+  box-shadow:
+    inset 0 2px 0 rgba(255, 255, 255, 0.3),
+    inset 0 -3px 0 rgba(60, 4, 4, 0.6),
+    1px 1px 0 0 #000;
+}
+
+.category-pixel-button.active {
+  transform: translate(3px, 4px);
+  background: linear-gradient(180deg, #ff5a5a 0%, #d81f1f 60%, #8a0e0e 100%);
+  box-shadow:
+    inset 0 2px 0 rgba(255, 255, 255, 0.3),
+    inset 0 -3px 0 rgba(40, 2, 2, 0.7),
+    1px 1px 0 0 #000,
+    0 0 14px 3px rgba(255, 40, 40, 0.55);
+  animation: pixel-idle-active 1.8s ease-in-out infinite;
+}
+
+@keyframes pixel-idle {
+  0%, 100% { filter: brightness(1); }
+  50% { filter: brightness(1.06); }
+}
+
+@keyframes pixel-idle-active {
+  0%, 100% {
+    box-shadow:
+      inset 0 2px 0 rgba(255, 255, 255, 0.3),
+      inset 0 -3px 0 rgba(40, 2, 2, 0.7),
+      1px 1px 0 0 #000,
+      0 0 10px 2px rgba(255, 40, 40, 0.45);
+  }
+  50% {
+    box-shadow:
+      inset 0 2px 0 rgba(255, 255, 255, 0.3),
+      inset 0 -3px 0 rgba(40, 2, 2, 0.7),
+      1px 1px 0 0 #000,
+      0 0 18px 4px rgba(255, 60, 60, 0.75);
+  }
+}
+
+/* Slight phase offsets so the idle pulse feels alive rather than a synchronized blink */
+.sidebar-tree > li:nth-child(3n+2) .category-pixel-button { animation-delay: 0.3s; }
+.sidebar-tree > li:nth-child(3n+3) .category-pixel-button { animation-delay: 0.6s; }
+
+@media (prefers-reduced-motion: reduce) {
+  .category-pixel-button {
+    animation: none;
+    transition: none;
+  }
+}
 
 .main-column {
   flex: 1;
@@ -301,6 +408,33 @@ body {
   max-height: 85vh;
   overflow-y: auto;
 }
+
+.file-status-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  max-height: 160px;
+  overflow-y: auto;
+}
+.file-status {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.35rem 0.6rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 0.82rem;
+  background: var(--panel-alt);
+}
+.file-status-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.file-status-state { flex-shrink: 0; color: var(--muted); }
+.file-status-uploading .file-status-state { color: var(--cyan); }
+.file-status-done .file-status-state { color: #8fd39a; }
+.file-status-error { border-color: var(--accent); }
+.file-status-error .file-status-state { color: var(--link); }
 
 .form { display: flex; flex-direction: column; gap: 0.9rem; }
 .form label { display: flex; flex-direction: column; gap: 0.3rem; font-size: 0.88rem; }

@@ -61,8 +61,11 @@ replacing a placeholder doesn't create a duplicate or break existing cross-refer
 
 ## Features (MVP)
 
-1. **Document upload** — drag-and-drop or click to browse, with a quick tagging step.
-   Text is extracted from PDF/DOCX/TXT/MD files for search and auto-categorization.
+1. **Document upload** — drag-and-drop or click to browse, with a quick tagging step. Select
+   or drop multiple files at once; each is processed and filed as its own independent document
+   (its own extracted text, its own auto-suggested category/tags), with a per-file
+   pending/uploading/success/error status so a batch drop is easy to audit. Text is extracted
+   from PDF/DOCX/TXT/MD files for search and auto-categorization.
 2. **Auto-categorization** — a keyword-based suggestion assigns a category on upload; you can
    always re-file or re-tag from the document detail view. A category picked automatically
    is marked "auto-suggested".
@@ -76,6 +79,15 @@ replacing a placeholder doesn't create a duplicate or break existing cross-refer
    or nested categories from the sidebar's "+ new" link.
 7. **Tickets** — their own entry type: problem, resolution, machine/model, date, tags, and
    links to related documents (and vice versa from the document view).
+
+## Look & feel
+
+Dark, Hurco-brand colorway (near-black background with a subtle red glow, cyan reserved for
+the "From the web" label). The sidebar's category buttons use a shared `.category-pixel-button`
+CSS class — a retro/arcade look (notched corners, red/black/maroon bevel, offset drop shadow,
+"Press Start 2P" pixel font, subtle idle glow, a pressed-down look when selected). Every
+category — seeded, nested, or created via the sidebar's "+ new" link — renders through the same
+component, so new categories automatically pick up the styling with no extra work.
 
 ## Web search
 
