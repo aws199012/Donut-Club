@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { db } from '../db.js';
 import { searchWeb } from '../websearch.js';
+import { aggregateGraph } from '../graph/aggregate.js';
 
 export const searchRouter = Router();
 
@@ -59,6 +60,51 @@ searchRouter.get('/local', (req, res) => {
     documents: documents.map((d) => ({ ...d, snippet: snippetByRef.get(`document:${d.id}`) })),
     tickets: tickets.map((t) => ({ ...t, snippet: snippetByRef.get(`ticket:${t.id}`) })),
   });
+});
+
+searchRouter.get('/graph', (req, res) => {
+  const q = (req.query.q || '').toString();
+  if (!q.trim()) {
+    return res.json({ query: q, nodes: [], edges: [], meta: { matchedSources: 0, entityCount: 0, relationshipCount: 0 } });
+  }
+
+  const matches = db
+    .prepare('SELECT type, ref_id FROM search_fts WHERE search_fts MATCH ? LIMIT 25')
+    .all(ftsQuery(q));
+
+  const documentIds = matches.filter((m) => m.type === 'document').map((m) => m.ref_id);
+  const ticketIds = matches.filter((m) => m.type === 'ticket').map((m) => m.ref_id);
+
+  const documents = documentIds.length
+    ? db
+        .prepare(
+          `SELECT id, title, graph_data FROM documents
+           WHERE id IN (${documentIds.map(() => '?').join(',')}) AND is_current = 1`
+        )
+        .all(...documentIds)
+    : [];
+  const tickets = ticketIds.length
+    ? db
+        .prepare(`SELECT id, title, graph_data FROM tickets WHERE id IN (${ticketIds.map(() => '?').join(',')})`)
+        .all(...ticketIds)
+    : [];
+
+  const sources = [
+    ...documents.map((d) => ({
+      type: 'document',
+      id: d.id,
+      title: d.title,
+      graphData: d.graph_data ? JSON.parse(d.graph_data) : null,
+    })),
+    ...tickets.map((t) => ({
+      type: 'ticket',
+      id: t.id,
+      title: t.title,
+      graphData: t.graph_data ? JSON.parse(t.graph_data) : null,
+    })),
+  ];
+
+  res.json(aggregateGraph(q, sources));
 });
 
 searchRouter.get('/web', async (req, res) => {

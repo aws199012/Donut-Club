@@ -7,6 +7,9 @@ import { documentsRouter } from './routes/documents.js';
 import { ticketsRouter } from './routes/tickets.js';
 import { categoriesRouter } from './routes/categories.js';
 import { searchRouter } from './routes/search.js';
+import { backfillGraphData } from './graph/store.js';
+
+backfillGraphData();
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();

@@ -8,6 +8,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { v4 as uuidv4 } from 'uuid';
 import { db, upsertTags, reindexFts, getCategoryIdByName } from './db.js';
+import { computeDocumentGraph, computeTicketGraph } from './graph/store.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const UPLOAD_DIR = process.env.UPLOAD_DIR || path.join(__dirname, '..', 'uploads');
@@ -38,6 +39,8 @@ function seedDocument({ title, categoryName, tags, body, placeholderNote }) {
   const existing = findDocumentByTitle(title);
   if (existing) {
     console.log(`skip document (already exists): ${title}`);
+    // Backfill graph_data for documents seeded before the knowledge-graph feature existed.
+    if (!existing.graph_data) computeDocumentGraph(existing.id, `${title}\n${placeholderNote || ''}\n${body}`);
     return existing.id;
   }
 
@@ -72,6 +75,8 @@ function seedDocument({ title, categoryName, tags, body, placeholderNote }) {
       body,
     });
 
+    computeDocumentGraph(documentId, `${title}\n${placeholderNote || ''}\n${body}`);
+
     return documentId;
   });
 
@@ -92,6 +97,10 @@ function seedTicket({
   const existing = findTicketByTitle(title);
   if (existing) {
     console.log(`skip ticket (already exists): ${title}`);
+    // Backfill graph_data for tickets seeded before the knowledge-graph feature existed.
+    if (!existing.graph_data) {
+      computeTicketGraph(existing.id, `${title}\n${problem}\n${resolution || ''}\n${machineModel || ''}`);
+    }
     return existing.id;
   }
 
@@ -136,6 +145,8 @@ function seedTicket({
       tags: tagNames.join(' '),
       body: `${problem}\n${resolution || ''}\n${machineModel || ''}`,
     });
+
+    computeTicketGraph(ticketId, `${title}\n${problem}\n${resolution || ''}\n${machineModel || ''}`);
 
     return ticketId;
   });

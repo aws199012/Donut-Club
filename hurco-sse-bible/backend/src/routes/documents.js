@@ -7,6 +7,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { db, upsertTags, reindexFts, removeFromFts, getCategoryIdByName } from '../db.js';
 import { extractText } from '../textExtract.js';
 import { suggestCategory } from '../categorize.js';
+import { computeDocumentGraph } from '../graph/store.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const UPLOAD_DIR = process.env.UPLOAD_DIR || path.join(__dirname, '..', '..', 'uploads');
@@ -169,6 +170,8 @@ documentsRouter.post('/', upload.single('file'), async (req, res) => {
       body: extractedText,
     });
 
+    computeDocumentGraph(documentId, `${docTitle}\n${notes || ''}\n${extractedText}`);
+
     return documentId;
   });
 
@@ -211,6 +214,7 @@ documentsRouter.patch('/:id', (req, res) => {
       tags: getDocumentTags(doc.id).join(' '),
       body: updated.extracted_text,
     });
+    computeDocumentGraph(doc.id, `${updated.title}\n${updated.notes || ''}\n${updated.extracted_text || ''}`);
   });
 
   updateTx();

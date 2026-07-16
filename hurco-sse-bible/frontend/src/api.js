@@ -49,4 +49,5 @@ export const api = {
 
   searchLocal: (q) => request(`/search/local?q=${encodeURIComponent(q)}`),
   searchWeb: (q) => request(`/search/web?q=${encodeURIComponent(q)}`),
+  searchGraph: (q) => request(`/search/graph?q=${encodeURIComponent(q)}`),
 };

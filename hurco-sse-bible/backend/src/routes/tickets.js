@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { db, upsertTags, reindexFts, removeFromFts, getCategoryIdByName } from '../db.js';
+import { computeTicketGraph } from '../graph/store.js';
 
 export const ticketsRouter = Router();
 
@@ -95,6 +96,8 @@ ticketsRouter.post('/', (req, res) => {
       body: `${problem}\n${resolution || ''}\n${machine_model || ''}`,
     });
 
+    computeTicketGraph(ticketId, `${title}\n${problem}\n${resolution || ''}\n${machine_model || ''}`);
+
     return ticketId;
   });
 
@@ -164,6 +167,10 @@ ticketsRouter.patch('/:id', (req, res) => {
       tags: getTicketTags(ticket.id).join(' '),
       body: `${updated.problem}\n${updated.resolution || ''}\n${updated.machine_model || ''}`,
     });
+    computeTicketGraph(
+      ticket.id,
+      `${updated.title}\n${updated.problem}\n${updated.resolution || ''}\n${updated.machine_model || ''}`
+    );
   });
 
   updateTx();

@@ -79,6 +79,52 @@ replacing a placeholder doesn't create a duplicate or break existing cross-refer
    or nested categories from the sidebar's "+ new" link.
 7. **Tickets** — their own entry type: problem, resolution, machine/model, date, tags, and
    links to related documents (and vice versa from the document view).
+8. **Knowledge graph** — a second results tab (alongside "Documents") that visualizes the
+   people, companies, technologies, parts, alarms, software, locations, dates, and events found
+   across your matching documents/tickets, and how they relate. See "Knowledge graph" below.
+
+## Knowledge graph
+
+Every search has a second tab, "Knowledge Graph", next to "Documents". It's a force-directed
+graph (D3) built entirely from a local, offline extraction pipeline — **no API calls, no LLM,
+no per-search cost**:
+
+- **Entity extraction** uses [`compromise`](https://github.com/spencermountain/compromise) (a
+  local JS NLP library) to find people, companies/organizations, places, and dates, plus a
+  custom Hurco/CNC term dictionary (`backend/src/graph/domainDictionary.js`) for domain
+  vocabulary generic NLP doesn't know — WinMax, MTConnect, EtherCAT, NavErr, servo faults,
+  G-code, etc. Add your own terms to that file any time; no other code changes needed.
+- **Relationships** are paragraph-level co-occurrence: two entities mentioned in the same
+  paragraph (or ~3-sentence chunk, for short ticket fields) get an edge, weighted by how often
+  that pairing recurs, with the actual excerpt(s) kept as citations.
+- **Keyword ranking** (a small RAKE-style implementation, `backend/src/graph/extract.js`) scores
+  which terms matter most in a document; matches feed into node "importance" alongside raw
+  mention count.
+- **Events** are a simple heuristic: any sentence containing both a date-like token and a known
+  action verb (replaced, installed, failed, diagnosed, etc.) becomes its own node, linked to
+  whichever entities that sentence also mentions.
+
+This all runs once, when a document/ticket is added or edited (`graph_data` column, computed by
+`backend/src/graph/store.js`), not on every search — searching just merges the already-computed
+per-document data for whichever documents/tickets matched. Existing databases get backfilled
+automatically the first time you start the backend after pulling this update.
+
+In the graph: node size = importance, edge thickness = co-occurrence strength, color = entity
+category (see the in-graph legend). It starts with only the central search term and its
+top ~12 most relevant entities shown (a dashed gold outline means a node has more hidden
+neighbors) — click a node to reveal its connections, drag nodes to rearrange, hover for a
+tooltip (mention count, weight, source documents), and click an edge to see the exact excerpt(s)
+that produced it, with a link back to the source document/ticket. If a search doesn't turn up
+enough structured detail for a useful graph, this tab shows a short note and falls back to the
+same library list as the Documents tab.
+
+**On accuracy**: this is heuristic pattern-matching, not real language understanding, so expect
+occasional noise — a few known false positives from the generic NLP pass (e.g. a document title
+fragment like "Licensing & Troubleshooting" or "DigiCert High Assurance" getting mistagged as a
+company name). If you spot a bad extraction, the fix is almost always either adding a term to
+`domainDictionary.js` (so it wins over the generic guess) or adding a short exclusion in
+`extract.js` the same way the existing `ORG_FALSE_POSITIVES` list handles a couple of short
+tech-abbreviation false positives.
 
 ## Look & feel
 
@@ -118,14 +164,17 @@ backend/
     textExtract.js  PDF/DOCX/TXT text extraction
     websearch.js    Pluggable web search (DuckDuckGo scrape or Bing API)
     seed.js         Loads the built-in Hurco SSE seed content (see "Seed content" above)
-    routes/         documents, tickets, categories, search
+    routes/         documents, tickets, categories, search (search/graph = knowledge graph)
+    graph/          extract.js (local NLP pipeline), aggregate.js (per-search merge),
+                    store.js (compute/backfill graph_data), domainDictionary.js (CNC terms)
   uploads/          Uploaded files live here (gitignored)
   data/             SQLite DB lives here (gitignored)
 frontend/
   src/
     App.jsx         Top-level layout/view state
     components/      Sidebar, SearchBar, SearchResults, DocumentDetail, TicketDetail,
-                      TicketForm, AddDocumentModal, AddCategoryModal, CategoryBrowse, Highlighted
+                      TicketForm, AddDocumentModal, AddCategoryModal, CategoryBrowse, Highlighted,
+                      KnowledgeGraph (D3 force-directed graph), LocalResultsList
 ```
 
 ## Known limitations / next steps

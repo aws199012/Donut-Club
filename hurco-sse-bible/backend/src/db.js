@@ -87,6 +87,19 @@ CREATE VIRTUAL TABLE IF NOT EXISTS search_fts USING fts5(
 );
 `);
 
+// SQLite has no "ADD COLUMN IF NOT EXISTS", so guard manually — needed for databases
+// created before the knowledge-graph feature existed.
+function ensureColumn(table, column, ddl) {
+  const cols = db.prepare(`PRAGMA table_info(${table})`).all();
+  if (!cols.some((c) => c.name === column)) {
+    db.exec(`ALTER TABLE ${table} ADD COLUMN ${ddl}`);
+  }
+}
+// graph_data holds the JSON output of the local entity/relationship extraction
+// pipeline (see graph/extract.js), recomputed only on write, not on every search.
+ensureColumn('documents', 'graph_data', 'graph_data TEXT');
+ensureColumn('tickets', 'graph_data', 'graph_data TEXT');
+
 const DEFAULT_CATEGORIES = [
   'Alarms & Diagnostics',
   'Maintenance',
