@@ -295,6 +295,21 @@ h1, h2, h3, h4, h5, h6, .sidebar-header {
   flex: 1;
   overflow-y: auto;
   padding: 1.5rem 2rem;
+  position: relative;
+  /* Hurco logo watermark: a near-opaque dark scrim (rgba(11,10,10,0.9), matching
+     --bg) layered over the logo drops its effective visibility to ~10%, giving a
+     subtle background texture rather than a competing image. background-attachment:
+     fixed keeps it anchored to the viewport as content scrolls past it. The image
+     itself lives outside the repo (see frontend/public/README-assets.md) — it's a
+     real Hurco brand asset and this repo is public. */
+  background-color: var(--bg);
+  background-image:
+    linear-gradient(rgba(11, 10, 10, 0.9), rgba(11, 10, 10, 0.9)),
+    url('/hurco-logo-red.png');
+  background-repeat: no-repeat, no-repeat;
+  background-position: center center, center center;
+  background-size: cover, min(640px, 60vw);
+  background-attachment: fixed, fixed;
 }
 
 .detail-pane {

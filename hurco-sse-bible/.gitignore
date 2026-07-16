@@ -7,3 +7,4 @@ backend/uploads/*
 !backend/uploads/.gitkeep
 .env
 dist/
+frontend/public/hurco-logo-red.png

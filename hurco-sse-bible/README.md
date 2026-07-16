@@ -95,6 +95,11 @@ vintage/diner-poster display font; body copy (metadata, tags, extracted text, fo
 "Nunito", a warmer but still highly readable complementary font. The category pixel buttons are
 untouched by this — they keep their own "Press Start 2P" font regardless.
 
+The main content area has a faint, centered Hurco logo watermark (a dark scrim over the logo
+keeps it at roughly 10% visibility, fixed in place as you scroll). The logo image itself isn't
+committed to this public repo — see `frontend/public/README-assets.md` for where to put your
+own copy locally. Without it, the page just shows the plain dark background as before.
+
 ## Web search
 
 By default, "From the web" uses a keyless scrape of DuckDuckGo's HTML endpoint — no API key
